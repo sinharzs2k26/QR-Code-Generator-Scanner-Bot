@@ -6,7 +6,7 @@ import qrcode
 from PIL import Image
 import cv2
 import numpy as np
-from pyzbar import decode
+from pyzbar.pyzbar import decode
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
