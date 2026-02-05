@@ -4,9 +4,11 @@ import logging
 from dotenv import load_dotenv
 import qrcode
 from PIL import Image
-import cv2
-import numpy as np
-from pyzbar.pyzbar import decode
+import barcode
+from barcode.writer import ImageWriter
+from io import BytesIO
+import base64
+import requests
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -200,7 +202,7 @@ async def scan_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Set state to waiting for image
     context.user_data['awaiting_qr_image'] = True
 
-# Process image to scan QR
+# New scanning function using pure Python
 async def process_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Process uploaded image and scan for QR codes."""
     if context.user_data.get('awaiting_qr_image'):
@@ -213,41 +215,39 @@ async def process_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await photo_file.download_to_memory(photo_bytes)
             photo_bytes.seek(0)
             
-            # Convert to OpenCV format
+            # Convert to PIL Image
             image = Image.open(photo_bytes)
-            open_cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+
+            # Upload to a free QR decoding API
+            response = requests.post(
+                'https://api.qrserver.com/v1/read-qr-code/',
+                files={'file': ('qr.png', photo_bytes.getvalue(), 'image/png')}
+            )
             
-            # Decode QR codes
-            decoded_objects = decode(open_cv_image)
-            
-            if decoded_objects:
-                results = []
-                for i, obj in enumerate(decoded_objects):
-                    qr_data = obj.data.decode('utf-8')
-                    qr_type = obj.type
-                    
-                    # Format output based on content
+            if response.status_code == 200:
+                data = response.json()
+                if data[0]['symbol'][0]['data']:
+                    qr_data = data[0]['symbol'][0]['data']
+                    # Format the response
                     if qr_data.startswith('http'):
                         formatted_data = f"🔗 **Link**: [{qr_data}]({qr_data})"
                     elif 'WIFI:' in qr_data.upper():
                         formatted_data = f"📶 **WiFi Config**: `{qr_data}`"
-                    elif '@' in qr_data and ('.com' in qr_data or '.' in qr_data):
-                        formatted_data = f"✉️ **Email/Contact**: `{qr_data}`"
                     else:
                         formatted_data = f"📝 **Text**: `{qr_data}`"
                     
-                    results.append(f"**QR Code #{i+1}**\n{formatted_data}\n")
-                
-                response = "✅ **QR Code(s) Detected!**\n\n" + "\n".join(results)
-                
+                    await update.message.reply_text(
+                        f"✅ **QR Code Detected!**\n\n{formatted_data}",
+                        parse_mode='Markdown'
+                    )
+                else:
+                    await update.message.reply_text("❌ No QR code found in the image.")
             else:
-                response = "❌ No QR code found in the image.\n\nPlease ensure:\n• The QR code is clear\n• Good lighting conditions\n• No blur or distortion"
-            
-            await update.message.reply_text(response, parse_mode='Markdown')
+                await update.message.reply_text("❌ Error scanning QR code. Please try again.")
             
         except Exception as e:
             logger.error(f"Error scanning QR: {e}")
-            await update.message.reply_text("❌ Error processing image. Please try again with a clear image.")
+            await update.message.reply_text("❌ Error processing image. Please try again.")
         
         # Reset state
         context.user_data['awaiting_qr_image'] = False
