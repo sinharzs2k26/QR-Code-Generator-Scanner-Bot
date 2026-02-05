@@ -2,5 +2,5 @@ python-telegram-bot
 qrcode[pil]
 pillow
 opencv-python
-pyzbar
+pyzbar==0.1.9
 python-dotenv
