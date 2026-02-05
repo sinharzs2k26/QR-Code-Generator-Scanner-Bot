@@ -1,0 +1,6 @@
+python-telegram-bot
+qrcode[pil]
+pillow
+opencv-python
+pyzbar
+python-dotenv
