@@ -1,4 +1,5 @@
 python-telegram-bot
 qrcode[pil]
 pillow
+python-barcode
 python-dotenv
