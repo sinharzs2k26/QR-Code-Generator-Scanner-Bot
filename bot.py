@@ -36,45 +36,37 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send a welcome message when the command /start is issued."""
     user = update.effective_user
     
-    keyboard = [
-        [
-            InlineKeyboardButton("📸 Scan QR from Image", callback_data='scan'),
-            InlineKeyboardButton("✨ Generate QR Code", callback_data='generate')
-        ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    await update.message.reply_text(
-        f"👋 Hello {user.first_name}!\n\n"
-        "I'm QR Code Bot 🤖\n\n"
-        "📌 **What I can do:**\n"
-        "• Generate QR codes from text/links\n"
-        "• Read QR codes from images\n\n"
-        "Tap the buttons below or use commands:\n"
-        "/generate - Create QR code\n"
-        "/scan - Read QR from image",
-        reply_markup=reply_markup
-    )
+    welcome_message = """
+    👋 Hello {user.first_name}!
+    I'm QR Code Bot 🤖
+    📌 What I can do:
+    • Generate QR codes from text/links
+    • Read QR codes from images
+    Tap the buttons below or use commands:
+    /generate - Create QR code
+    /scan - Read QR from image
+    """
+    await update.message.reply_text(welcome_message, parse_mode='Markdown')
 
 # Help command
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send help message."""
     help_text = """
-    🤖 **QR Code Bot Commands:**
+    🤖 QR Code Bot Commands:
     
-    **Basic Commands:**
+    Basic Commands:
     /start - Start the bot
     /help - Show this help message
     
-    **QR Code Operations:**
+    QR Code Operations:
     /generate - Generate a QR code
     /scan - Scan QR code from image
     
-    **How to use:**
-    1. **Generate QR:** Send /generate then enter text/URL
-    2. **Scan QR:** Send /scan then upload an image containing QR code
+    How to use:
+    1. Generate QR: Send /generate then enter text/URL
+    2. Scan QR: Send /scan then upload an image containing QR code
     
-    **Features:**
+    Features:
     • Supports URLs, text, contact info, WiFi credentials
     • Customizable QR colors
     • Batch QR generation
@@ -85,9 +77,9 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def generate_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Start QR generation process."""
     await update.message.reply_text(
-        "✨ **QR Code Generator**\n\n"
+        "✨ QR Code Generator\n\n"
         "Please send me the text or URL you want to encode in the QR code.\n\n"
-        "📝 **Examples:**\n"
+        "📝 Examples:\n"
         "• https://example.com\n"
         "• Your contact information\n"
         "• WiFi: WPA2;SSID;Password\n"
@@ -120,7 +112,7 @@ async def process_qr_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await update.message.reply_text(
-            f"📝 **Text to encode:**\n`{text[:50]}{'...' if len(text) > 50 else ''}`\n\n"
+            f"📝 Text to encode:\n`{text[:50]}{'...' if len(text) > 50 else ''}`\n\n"
             "Choose QR code color:",
             reply_markup=reply_markup,
             parse_mode='Markdown'
@@ -176,9 +168,9 @@ async def generate_qr_with_color(update: Update, context: ContextTypes.DEFAULT_T
         await context.bot.send_photo(
             chat_id=query.message.chat_id,
             photo=bio,
-            caption=f"✅ **QR Code Generated!**\n\n"
-                   f"**Content:** `{text[:100]}{'...' if len(text) > 100 else ''}`\n"
-                   f"**Color:** {color_name.capitalize()}\n\n"
+            caption=f"✅ QR Code Generated!\n\n"
+                   f"Content: `{text[:100]}{'...' if len(text) > 100 else ''}`\n"
+                   f"Color: {color_name.capitalize()}\n\n"
                    f"📥 Scan this QR code with any QR scanner app.",
             parse_mode='Markdown'
         )
@@ -191,9 +183,9 @@ async def generate_qr_with_color(update: Update, context: ContextTypes.DEFAULT_T
 async def scan_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Start QR scanning process."""
     await update.message.reply_text(
-        "📸 **QR Code Scanner**\n\n"
+        "📸 QR Code Scanner\n\n"
         "Please send me an image containing a QR code.\n\n"
-        "📌 **Tips:**\n"
+        "📌 Tips:\n"
         "• Ensure good lighting\n"
         "• QR code should be clear and centered\n"
         "• Send as photo (not as file)"
@@ -230,14 +222,14 @@ async def process_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     qr_data = data[0]['symbol'][0]['data']
                     # Format the response
                     if qr_data.startswith('http'):
-                        formatted_data = f"🔗 **Link**: [{qr_data}]({qr_data})"
+                        formatted_data = f"🔗 Link: [{qr_data}]({qr_data})"
                     elif 'WIFI:' in qr_data.upper():
-                        formatted_data = f"📶 **WiFi Config**: `{qr_data}`"
+                        formatted_data = f"📶 WiFi Config: `{qr_data}`"
                     else:
-                        formatted_data = f"📝 **Text**: `{qr_data}`"
+                        formatted_data = f"📝 Text: `{qr_data}`"
                     
                     await update.message.reply_text(
-                        f"✅ **QR Code Detected!**\n\n{formatted_data}",
+                        f"✅ QR Code Detected!\n\n{formatted_data}",
                         parse_mode='Markdown'
                     )
                 else:
@@ -257,36 +249,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle inline button presses."""
     query = update.callback_query
     await query.answer()
-    
-    if query.data == 'scan':
-        await scan_qr_callback(query, context)
-    elif query.data == 'generate':
-        await generate_qr_callback(query, context)
-    elif query.data.startswith('color_'):
+
+    if query.data.startswith('color_'):
         await generate_qr_with_color(update, context)
-
-async def scan_qr_callback(query, context):
-    """Handle scan button callback."""
-    await query.edit_message_text(
-        "📸 **QR Code Scanner**\n\n"
-        "Please send me an image containing a QR code.\n\n"
-        "📌 **Tips:**\n"
-        "• Ensure good lighting\n"
-        "• QR code should be clear and centered\n"
-        "• Send as photo (not as file)"
-    )
-
-async def generate_qr_callback(query, context):
-    """Handle generate button callback."""
-    await query.edit_message_text(
-        "✨ **QR Code Generator**\n\n"
-        "Please send me the text or URL you want to encode in the QR code.\n\n"
-        "📝 **Examples:**\n"
-        "• https://example.com\n"
-        "• Your contact information\n"
-        "• WiFi: WPA2;SSID;Password\n"
-        "• Plain text message"
-    )
     
     # Set state
     context.user_data['awaiting_qr_text'] = True
@@ -318,7 +283,7 @@ async def batch_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
     else:
         await update.message.reply_text(
-            "📦 **Batch QR Generator**\n\n"
+            "📦 Batch QR Generator\n\n"
             "Usage: `/batchqr text1, text2, text3`\n\n"
             "Example: `/batchqr https://google.com, Hello World, WIFI:S:MyNetwork;T:WPA;P:mypassword;`",
             parse_mode='Markdown'
