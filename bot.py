@@ -169,8 +169,7 @@ async def generate_qr_with_color(update: Update, context: ContextTypes.DEFAULT_T
             photo=bio,
             caption=f"✅ QR Code Generated!\n\n"
                    f"Content: {text[:100]}{'...' if len(text) > 100 else ''}\n"
-                   f"Color: {color_name.capitalize()}\n\n"
-                   f"📥 Scan this QR code with any QR scanner app.",
+                   f"Color: {color_name.capitalize()}"
         )
 
     except Exception as e:
