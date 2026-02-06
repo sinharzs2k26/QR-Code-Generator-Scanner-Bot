@@ -37,11 +37,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
 
     welcome_message = (
-        f"👋 Hello {user.first_name}!\n"
-        "I'm QR Code Bot 🤖\n"
+        f"👋 Hello {user.first_name}!\n\n"
+        "I'm QR Code Bot 🤖\n\n"
         "📌 What I can do:\n"
         "• Generate QR codes from text/links\n"
-        "• Read QR codes from images\n"
+        "• Read QR codes from images\n\n"
         "Commands:\n"
         "/help - See how to use\n" 
         "/generate - Create QR code\n"
