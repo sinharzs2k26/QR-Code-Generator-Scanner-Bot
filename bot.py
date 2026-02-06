@@ -35,16 +35,18 @@ if not os.path.exists('qr_codes'):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send a welcome message when the command /start is issued."""
     user = update.effective_user
-    
+
     welcome_message = """
     👋 Hello {user.first_name}!
     I'm QR Code Bot 🤖
     📌 What I can do:
     • Generate QR codes from text/links
     • Read QR codes from images
-    Tap the buttons below or use commands:
+    Commands:
+    /help - See how to use
     /generate - Create QR code
     /scan - Read QR from image
+    /batchqr - Generate multiple QR codes from a list
     """
     await update.message.reply_text(welcome_message, parse_mode='Markdown')
 
@@ -61,10 +63,12 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     QR Code Operations:
     /generate - Generate a QR code
     /scan - Scan QR code from image
+    /batchqr - Generate multiple QR codes from a list
     
     How to use:
     1. Generate QR: Send /generate then enter text/URL
     2. Scan QR: Send /scan then upload an image containing QR code
+    3. Batch QR: Send /batchqr then enter multiple texts/URLs
     
     Features:
     • Supports URLs, text, contact info, WiFi credentials
@@ -85,7 +89,7 @@ async def generate_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• WiFi: WPA2;SSID;Password\n"
         "• Plain text message"
     )
-    
+
     # Set state to waiting for QR text
     context.user_data['awaiting_qr_text'] = True
 
@@ -94,7 +98,7 @@ async def process_qr_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Process the text and generate QR code."""
     if context.user_data.get('awaiting_qr_text'):
         text = update.message.text
-        
+
         # Ask for QR code color
         keyboard = [
             [
@@ -110,14 +114,14 @@ async def process_qr_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        
+
         await update.message.reply_text(
             f"📝 Text to encode:\n`{text[:50]}{'...' if len(text) > 50 else ''}`\n\n"
             "Choose QR code color:",
             reply_markup=reply_markup,
             parse_mode='Markdown'
         )
-        
+
         # Reset state
         context.user_data['awaiting_qr_text'] = False
 
@@ -126,12 +130,12 @@ async def generate_qr_with_color(update: Update, context: ContextTypes.DEFAULT_T
     """Generate QR code with chosen color."""
     query = update.callback_query
     await query.answer()
-    
+
     # Parse callback data
     data = query.data
     color_name = data.split('_')[1]
     text = '_'.join(data.split('_')[2:])  # Reconstruct text
-    
+
     # Map color names to RGB
     color_map = {
         'black': (0, 0, 0),
@@ -140,13 +144,13 @@ async def generate_qr_with_color(update: Update, context: ContextTypes.DEFAULT_T
         'green': (0, 128, 0),
         'purple': (128, 0, 128)
     }
-    
+
     fill_color = color_map.get(color_name, (0, 0, 0))
-    
+
     # Generate QR code
     try:
         await query.edit_message_text(f"🎨 Generating {color_name} QR code...")
-        
+
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_H,
@@ -155,15 +159,15 @@ async def generate_qr_with_color(update: Update, context: ContextTypes.DEFAULT_T
         )
         qr.add_data(text)
         qr.make(fit=True)
-        
+
         # Create QR image
         img = qr.make_image(fill_color=fill_color, back_color="white")
-        
+
         # Convert to bytes
         bio = io.BytesIO()
         img.save(bio, 'PNG')
         bio.seek(0)
-        
+
         # Send QR code
         await context.bot.send_photo(
             chat_id=query.message.chat_id,
@@ -174,7 +178,7 @@ async def generate_qr_with_color(update: Update, context: ContextTypes.DEFAULT_T
                    f"📥 Scan this QR code with any QR scanner app.",
             parse_mode='Markdown'
         )
-        
+
     except Exception as e:
         logger.error(f"Error generating QR: {e}")
         await query.edit_message_text("❌ Error generating QR code. Please try again.")
@@ -190,7 +194,7 @@ async def scan_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• QR code should be clear and centered\n"
         "• Send as photo (not as file)"
     )
-    
+
     # Set state to waiting for image
     context.user_data['awaiting_qr_image'] = True
 
@@ -201,12 +205,12 @@ async def process_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             # Get the photo
             photo_file = await update.message.photo[-1].get_file()
-            
+
             # Download photo to bytes
             photo_bytes = io.BytesIO()
             await photo_file.download_to_memory(photo_bytes)
             photo_bytes.seek(0)
-            
+
             # Convert to PIL Image
             image = Image.open(photo_bytes)
 
@@ -215,7 +219,7 @@ async def process_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 'https://api.qrserver.com/v1/read-qr-code/',
                 files={'file': ('qr.png', photo_bytes.getvalue(), 'image/png')}
             )
-            
+
             if response.status_code == 200:
                 data = response.json()
                 if data[0]['symbol'][0]['data']:
@@ -227,7 +231,7 @@ async def process_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         formatted_data = f"📶 WiFi Config: `{qr_data}`"
                     else:
                         formatted_data = f"📝 Text: `{qr_data}`"
-                    
+
                     await update.message.reply_text(
                         f"✅ QR Code Detected!\n\n{formatted_data}",
                         parse_mode='Markdown'
@@ -236,11 +240,11 @@ async def process_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     await update.message.reply_text("❌ No QR code found in the image.")
             else:
                 await update.message.reply_text("❌ Error scanning QR code. Please try again.")
-            
+
         except Exception as e:
             logger.error(f"Error scanning QR: {e}")
             await update.message.reply_text("❌ Error processing image. Please try again.")
-        
+
         # Reset state
         context.user_data['awaiting_qr_image'] = False
 
@@ -252,7 +256,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if query.data.startswith('color_'):
         await generate_qr_with_color(update, context)
-    
+
     # Set state
     context.user_data['awaiting_qr_text'] = True
 
@@ -261,13 +265,13 @@ async def batch_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Generate multiple QR codes from a list."""
     if context.args:
         texts = ' '.join(context.args).split(',')
-        
+
         if len(texts) > 5:
             await update.message.reply_text("⚠️ Please limit to 5 QR codes at a time.")
             return
-        
+
         await update.message.reply_text(f"Generating {len(texts)} QR codes...")
-        
+
         for i, text in enumerate(texts, 1):
             text = text.strip()
             if text:
@@ -275,7 +279,7 @@ async def batch_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 bio = io.BytesIO()
                 qr.save(bio, 'PNG')
                 bio.seek(0)
-                
+
                 await update.message.reply_photo(
                     photo=bio,
                     caption=f"QR #{i}: `{text[:50]}{'...' if len(text) > 50 else ''}`",
@@ -303,52 +307,52 @@ def main():
     """Start the bot."""
     # Create application
     application = Application.builder().token(TOKEN).build()
-    
+
     # Add command handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("generate", generate_qr))
     application.add_handler(CommandHandler("scan", scan_qr))
     application.add_handler(CommandHandler("batchqr", batch_qr))
-    
+
     # Add callback handler for buttons
     application.add_handler(CallbackQueryHandler(button_handler))
-    
+
     # Add message handlers
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, process_qr_text))
     application.add_handler(MessageHandler(filters.PHOTO, process_image))
-    
+
     # Add error handler
     application.add_error_handler(error_handler)
-    
+
     # Start the bot
     print("🤖 QR Code Bot is starting...")
     print("Press Ctrl+C to stop")
-    
+
     class HealthHandler(BaseHTTPRequestHandler):
         def do_GET(self):
             self.send_response(200)
             self.send_header('Content-type', 'text/plain')
             self.end_headers()
             self.wfile.write(b'Bot is alive!')
-        
+
         def log_message(self, format, *args):
             pass  # Silence logs
 
     def run_health_server():
-        port = int(os.environ.get("PORT", 8080))
+        port = int(os.environ.get("PORT", 10000))
         httpd = HTTPServer(('0.0.0.0', port), HealthHandler)
         logger.info(f"✅ Health server on port {port}")
         httpd.serve_forever()
-    
+
     # Start health server
     health_thread = threading.Thread(target=run_health_server, daemon=True)
     health_thread.start()
-    
+
     application.run_polling(
         drop_pending_updates=True,
         allowed_updates=Update.ALL_TYPES
        )
-       
+
 if __name__ == '__main__':
     main()
