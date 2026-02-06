@@ -36,46 +36,42 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send a welcome message when the command /start is issued."""
     user = update.effective_user
 
-    welcome_message = """
-    👋 Hello {user.first_name}!
-    I'm QR Code Bot 🤖
-    📌 What I can do:
-    • Generate QR codes from text/links
-    • Read QR codes from images
-    Commands:
-    /help - See how to use
-    /generate - Create QR code
-    /scan - Read QR from image
-    /batchqr - Generate multiple QR codes from a list
-    """
-    await update.message.reply_text(welcome_message, parse_mode='Markdown')
+    welcome_message = (
+        f"👋 Hello {user.first_name}!\n"
+        "I'm QR Code Bot 🤖\n"
+        "📌 What I can do:\n"
+        "• Generate QR codes from text/links\n"
+        "• Read QR codes from images\n"
+        "Commands:\n"
+        "/help - See how to use\n" 
+        "/generate - Create QR code\n"
+        "/scan - Read QR from image\n"
+        "/batchqr - Generate multiple QR codes from a list"
+    )
+    await update.message.reply_text(welcome_message)
 
 # Help command
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send help message."""
-    help_text = """
-    🤖 QR Code Bot Commands:
-    
-    Basic Commands:
-    /start - Start the bot
-    /help - Show this help message
-    
-    QR Code Operations:
-    /generate - Generate a QR code
-    /scan - Scan QR code from image
-    /batchqr - Generate multiple QR codes from a list
-    
-    How to use:
-    1. Generate QR: Send /generate then enter text/URL
-    2. Scan QR: Send /scan then upload an image containing QR code
-    3. Batch QR: Send /batchqr then enter multiple texts/URLs
-    
-    Features:
-    • Supports URLs, text, contact info, WiFi credentials
-    • Customizable QR colors
-    • Batch QR generation
-    """
-    await update.message.reply_text(help_text, parse_mode='Markdown')
+    help_text = (
+        "🤖 QR Code Bot Commands:\n\n" 
+        "Basic Commands:\n"
+        "/start - Start the bot\n"
+        "/help - Show this help message\n\n"
+        "QR Code Operations:\n"
+        "/generate - Generate a QR code\n"
+        "/scan - Scan QR code from image\n"
+        "/batchqr - Generate multiple QR codes from a list\n\n"
+        "How to use:\n"
+        "1. Generate QR: Send /generate then enter text/URL\n"
+        "2. Scan QR: Send /scan then upload an image containing QR code\n"
+        "3. Batch QR: Send /batchqr then enter multiple texts/URLs\n\n"
+        "Features:\n"
+        "• Supports URLs, text, contact info, WiFi credentials\n"
+        "• Customizable QR colors\n"
+        "• Batch QR generation\n"
+    )
+    await update.message.reply_text(help_text)
 
 # Generate QR code
 async def generate_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -116,10 +112,9 @@ async def process_qr_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         await update.message.reply_text(
-            f"📝 Text to encode:\n`{text[:50]}{'...' if len(text) > 50 else ''}`\n\n"
+            f"📝 Text to encode:\n{text[:50]}{'...' if len(text) > 50 else ''}\n\n"
             "Choose QR code color:",
             reply_markup=reply_markup,
-            parse_mode='Markdown'
         )
 
         # Reset state
@@ -173,10 +168,9 @@ async def generate_qr_with_color(update: Update, context: ContextTypes.DEFAULT_T
             chat_id=query.message.chat_id,
             photo=bio,
             caption=f"✅ QR Code Generated!\n\n"
-                   f"Content: `{text[:100]}{'...' if len(text) > 100 else ''}`\n"
+                   f"Content: {text[:100]}{'...' if len(text) > 100 else ''}\n"
                    f"Color: {color_name.capitalize()}\n\n"
                    f"📥 Scan this QR code with any QR scanner app.",
-            parse_mode='Markdown'
         )
 
     except Exception as e:
@@ -228,13 +222,12 @@ async def process_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     if qr_data.startswith('http'):
                         formatted_data = f"🔗 Link: [{qr_data}]({qr_data})"
                     elif 'WIFI:' in qr_data.upper():
-                        formatted_data = f"📶 WiFi Config: `{qr_data}`"
+                        formatted_data = f"📶 WiFi Config: {qr_data}"
                     else:
-                        formatted_data = f"📝 Text: `{qr_data}`"
+                        formatted_data = f"📝 Text: {qr_data}"
 
                     await update.message.reply_text(
                         f"✅ QR Code Detected!\n\n{formatted_data}",
-                        parse_mode='Markdown'
                     )
                 else:
                     await update.message.reply_text("❌ No QR code found in the image.")
@@ -282,15 +275,13 @@ async def batch_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
                 await update.message.reply_photo(
                     photo=bio,
-                    caption=f"QR #{i}: `{text[:50]}{'...' if len(text) > 50 else ''}`",
-                    parse_mode='Markdown'
+                    caption=f"QR #{i}: {text[:50]}{'...' if len(text) > 50 else ''}",
                 )
     else:
         await update.message.reply_text(
             "📦 Batch QR Generator\n\n"
-            "Usage: `/batchqr text1, text2, text3`\n\n"
-            "Example: `/batchqr https://google.com, Hello World, WIFI:S:MyNetwork;T:WPA;P:mypassword;`",
-            parse_mode='Markdown'
+            "Usage: /batchqr text1, text2, text3\n\n"
+            "Example: /batchqr https://google.com, Hello World, WIFI:S:MyNetwork;T:WPA;P:mypassword;",
         )
 
 # Error handler
