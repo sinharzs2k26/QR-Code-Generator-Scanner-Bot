@@ -2,6 +2,8 @@
 
 A feature-rich Telegram bot for generating and scanning QR codes with custom styling options. Built with Python and deployed on Render.com.
 
+**Bot link:** `t.me/QRcodeGenScan_bot`
+
 ## ✨ Features
 
 🎨 QR Code Generation
