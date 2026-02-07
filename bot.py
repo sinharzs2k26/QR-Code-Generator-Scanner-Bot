@@ -219,7 +219,7 @@ async def process_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     qr_data = data[0]['symbol'][0]['data']
                     # Format the response
                     if qr_data.startswith('http'):
-                        formatted_data = f"🔗 Link: [{qr_data}]({qr_data})"
+                        formatted_data = f"🔗 Link: {qr_data}"
                     elif 'WIFI:' in qr_data.upper():
                         formatted_data = f"📶 WiFi Config: {qr_data}"
                     else:
