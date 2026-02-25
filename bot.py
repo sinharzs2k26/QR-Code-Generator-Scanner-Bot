@@ -3,6 +3,7 @@ import io
 import logging
 from dotenv import load_dotenv
 import qrcode
+from PIL import Image
 import barcode
 from barcode.writer import ImageWriter
 from io import BytesIO
