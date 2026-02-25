@@ -155,7 +155,7 @@ async def scan_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def process_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.user_data.get('awaiting_qr_image'):
         try:
-
+            await update.message.reply_text("🔍 Scanning QR code")
             photo_file = await update.message.photo[-1].get_file()
             photo_bytes = io.BytesIO()
             await photo_file.download_to_memory(photo_bytes)
